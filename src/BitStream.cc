@@ -143,5 +143,6 @@ vector<BaseType> BitStream::getData()
 void BitStream::reset()
 {
     currentUnit = bitOffset = 0;
+    endOfStream = false;
     checkEndOfStream();
 }

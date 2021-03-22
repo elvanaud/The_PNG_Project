@@ -9,12 +9,13 @@ public:
     Deflate();
     //Deflate(BitStream &pst);
     void compress();
-    BitStream& uncompress(BitStream &in);
+    BitStream& uncompress(BitStream &in);//todo: uncompress block by block (as a stream ?)
 
 private:
     //BitStream & in;
     BitStream out;
     void processUncompressedBlock(BitStream &in);
+    void loadDynamicHuffmanTree(BitStream& in);
     void processBlock(BitStream &in);
     bool finalBlock = false;
 };

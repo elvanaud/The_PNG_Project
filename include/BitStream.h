@@ -24,7 +24,7 @@ public:
     bool checkEndOfStream();
 
     void reset();
-    void skipToFullByte();
+    void skipToFullByte();//add a method to know when writing that the current byte is full
 
     vector<BaseType> getData(); //outputs a copy of written data at the moment of calling
 private:
