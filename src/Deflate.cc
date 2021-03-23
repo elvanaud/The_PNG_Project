@@ -8,15 +8,9 @@ Deflate::Deflate()
 
 }
 
-
-/*Deflate::Deflate(BitStream &pst):in(pst)
-{
-    //ctor
-}*/
-
 void Deflate::processUncompressedBlock(BitStream &in)
 {
-    in.skipToFullByte();
+    in.skipToFullByte(BitStream::ReadCursor);
     uint16_t len = in.read16(16);
     uint16_t nlen = ~in.read16(16);
 
@@ -34,32 +28,61 @@ BitStream& Deflate::uncompress(BitStream &in)
         processBlock(in);
     }
     return out;
-    //return out.getData();//something like that ? => could return the stream itself or a ref to the vector (which can grow as we output data)
 }
 
 void Deflate::loadDynamicHuffmanTree(BitStream& in)
 {
-    int HLIT = in.read(5)+257;
-    int HDIST = in.read(5)+1;
-    int HCLEN = in.read(4)+4;
+    unsigned int HLIT = in.read(5)+257;
+    unsigned int HDIST = in.read(5)+1;
+    unsigned int HCLEN = in.read(4)+4;
 
     vector<int> codeLengthAlphabet = {16,17,18,0,8,7,9,6,10,5,11,4,12,3,13,2,14,1,15};
-    /*array<int,19>*/vector<int> codeLengthCodes = {};
-    for(int i = 0;i<HCLEN;i++)
+    vector<int> codeLengthCodes = {};
+    for(unsigned int i = 0;i<HCLEN;i++)
     {
-        //codeLengthCodes[codeLengthAlphabet[i]] = in.read(3);
-        //codeLengthCodes[i] = in.read(3);
         codeLengthCodes.push_back(in.read(3));
     }
     HuffmanTree<int> predecodeTree;
-    //predecodeTree.loadFromCodeLength(codeLengthAlphabet,vector<int>(codeLengthCodes.begin(),codeLengthCodes.end()),7);
-    predecodeTree.loadFromCodeLength(codeLengthAlphabet,codeLengthCodes,7);
+    predecodeTree.loadFromCodeLength(codeLengthAlphabet,true,codeLengthCodes,7);
 
-    vector<int> compressedLengths;
-    for(int i = 0; i < HDIST+HLIT; i++)
+    vector<int> globalCodeLengths;
+    int lastLength = 0;
+
+    for(unsigned int totalCodeLength = 0; totalCodeLength < HDIST+HLIT;)
     {
-        compressedLengths.push_back(predecodeTree.readNext(in));
+        int v = predecodeTree.readNext(in);
+        if(v < 16)
+        {
+            lastLength = v;
+            totalCodeLength++;
+            globalCodeLengths.push_back(v);
+        }
+        else if(v == 16)
+        {
+            int repeatLast = in.read(2)+3;
+            totalCodeLength += repeatLast;
+            for(;repeatLast>0;repeatLast--)
+                globalCodeLengths.push_back(lastLength);
+        }
+        else
+        {
+            int repeatZero = 0;
+            if(v==17)
+                repeatZero = in.read(3)+3;
+            else
+                repeatZero = in.read(7)+11;
+            lastLength = 0;
+            totalCodeLength += repeatZero;
+            for(;repeatZero>0;repeatZero--)
+                globalCodeLengths.push_back(0);
+        }
     }
+    if(globalCodeLengths.size() != HLIT+HDIST) throw "dynamic huffman error: hdit and hlit don't match the number of code length read";
+
+    vector<int> distLengths;
+    for(unsigned int i = HLIT; i < globalCodeLengths.size(); i++)
+        distLengths.push_back(globalCodeLengths[i]);
+    globalCodeLengths.resize(HLIT);//becomes literal/length lengths
 }
 
 void Deflate::processBlock(BitStream &in)

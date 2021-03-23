@@ -12,7 +12,7 @@ class BitStream
 public:
     BitStream();
     ~BitStream();
-    BitStream(vector<BaseType> &d);
+    BitStream(vector<BaseType> const &d);
     uint8_t     read8(int numBits);
     uint16_t    read16(int numBits);
     uint32_t    read32(int numBits);
@@ -20,19 +20,27 @@ public:
 
     void write(uint32_t d, int numBits);
 
-    bool endOfStream = false;
-    bool checkEndOfStream();
+    bool endOfStream = false;//todo: replace this with a closedStream bool and a setter
+    bool checkEndOfStream();//only works with the read cursor
 
-    void reset();
-    void skipToFullByte();//add a method to know when writing that the current byte is full
+    enum CursorType {ReadCursor,WriteCursor};
+    void reset(CursorType cType);
+    void skipToFullByte(CursorType cType);//add a method to know when writing that the current byte is full
 
     vector<BaseType> getData(); //outputs a copy of written data at the moment of calling
 private:
-    vector<BaseType> &data;//careful
-    unsigned int currentUnit = 0;
-    unsigned int bitOffset = 0;
+    vector<BaseType> data;
+    struct Cursor
+    {
+        unsigned int currentUnit = 0;
+        unsigned int bitOffset = 0;
+    };
+    Cursor rCursor;
+    Cursor wCursor;
 
-    bool dataManuallyAllocated = false;
+    Cursor * parseCursorType(CursorType t);
+
+    bool dataManuallyAllocated = false;//todo: rename writeExtend
 };
 
 #endif // BITSTREAM_H

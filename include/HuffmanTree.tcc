@@ -6,24 +6,6 @@ HuffmanTree<SymbolType>::HuffmanTree()
     //ctor
 }
 
-/*bool HuffmanTree::decode(int bit,SymbolType* decodedSymbol)
-{
-    bit &= 1;
-    currentCode <<= 1;
-    currentCode |= bit;
-    bitLength++;
-
-    if(codes[currentCode].length == bitLength)
-    {
-        *decodedSymbol = codes[currentCode].symbol;
-        currentCode = 0;
-        bitLength = 0;
-        return true;
-    }
-    //if(bitLength>high_value) throw "no code found";
-    return false;
-}*/
-
 template<class SymbolType>
 bool HuffmanTree<SymbolType>::decode(int bit,SymbolType* decodedSymbol)
 {
@@ -42,26 +24,12 @@ bool HuffmanTree<SymbolType>::decode(int bit,SymbolType* decodedSymbol)
 }
 
 template<class SymbolType>
-void HuffmanTree<SymbolType>::loadFromCodeLength(vector<SymbolType> alphabet, vector<int> codeLengths, int maxLength)
+vector<int> HuffmanTree<SymbolType>::computeStartCodes(vector<int> const & codeLengths, int maxLength)
 {
     int nbCodes = codeLengths.size();
     if(nbCodes==0) throw "Huffman error: empty code lengths";
     vector<int> lengthCount;
-    /*for(int length = 0; length <= nbCodes; length++)
-    {
-        for(int i : codeLengths)
-        {
-            if(i == length)
-            {
-                if(lengthCount.size<= length)
-                {
-                    lengthCount.push_back(0);
-                }
-                lengthCount[length]++;
-            }
-        }
-    }
-    int maxLength = lengthCount.size()-1;*/
+
     for(int i = 0; i <= maxLength; i++)
         lengthCount.push_back(0);
     vector<int> startCode(lengthCount);
@@ -80,28 +48,76 @@ void HuffmanTree<SymbolType>::loadFromCodeLength(vector<SymbolType> alphabet, ve
         startCode[i] = lastCode;
     }
 
-    for(unsigned int i = 0; i < codeLengths.size(); i++)
+    return startCode;
+}
+
+template<class SymbolType>
+void HuffmanTree<SymbolType>::assignCode(int len, vector<int> & startCodes, SymbolType sym)
+{
+    if(len != 0)
     {
-        int len = codeLengths[i];
-        if(len != 0)
-        {
-            HuffmanCode code;
-            code.code = startCode[len];
-            code.symbol = alphabet[i];
-            code.length = len;
+        HuffmanCode code;
+        code.code = startCodes[len];
+        code.symbol = sym;
+        code.length = len;
 
-            code.parentState = addStates(code);
-            symbols.push_back(code);
-            startCode[len]++;
-        }
+        code.parentState = addStates(code);
+        if(indexableSymbols) symbols[code.symbol] = code;
+        else symbols.push_back(code);
+        startCodes[len]++;
     }
+}
 
+
+template<class SymbolType>
+void HuffmanTree<SymbolType>::connectStatesToSymbols()
+{
     int nbStates = states.size();
     for(unsigned int i = 0; i < symbols.size(); i++)
     {
         //todo: check still -1 or throw
         states[symbols[i].parentState][symbols[i].code&1] = i+nbStates;
     }
+}
+
+template<class SymbolType>
+void HuffmanTree<SymbolType>::preloadSymbolTable(unsigned int alphabetSize)
+{
+    if(indexableSymbols)
+    {
+        HuffmanCode emptyCode;
+        for(unsigned int i = 0; i < alphabetSize; i++)
+            symbols.push_back(emptyCode);
+    }
+}
+
+template<class SymbolType>
+void HuffmanTree<SymbolType>::loadFromCodeLength(vector<int> codeLengths, int maxLength)
+{
+    indexableSymbols = true;
+    vector<int> startCodes = computeStartCodes(codeLengths,maxLength);
+    preloadSymbolTable(codeLengths.size());
+    for(unsigned int i = 0; i < codeLengths.size(); i++)
+    {
+        assignCode(codeLengths[i],startCodes,i);
+    }
+
+    connectStatesToSymbols();
+}
+
+template<class SymbolType>
+void HuffmanTree<SymbolType>::loadFromCodeLength(vector<SymbolType> alphabet, bool idxSym, vector<int> codeLengths, int maxLength)
+{
+    indexableSymbols = idxSym;
+    vector<int> startCodes = computeStartCodes(codeLengths,maxLength);
+
+    preloadSymbolTable(alphabet.size());
+    for(unsigned int i = 0; i < codeLengths.size(); i++)
+    {
+        assignCode(codeLengths[i],startCodes,alphabet[i]);
+    }
+
+    connectStatesToSymbols();
 }
 
 template<class SymbolType>
@@ -144,18 +160,28 @@ SymbolType HuffmanTree<SymbolType>::readNext(BitStream & in)
 template<class SymbolType>
 void HuffmanTree<SymbolType>::write(BitStream & in, SymbolType s)
 {
-    for(HuffmanCode code : symbols)
+    //The code has to be written in reverse order !
+    auto reverseWrite = [&](HuffmanCode & code)
     {
-        if(code.symbol == s)
+        int offset = code.length-1;
+        for(;offset>=0;offset--)
         {
-            //The code has to be written in reverse order !
-            int offset = code.length-1;
-            for(;offset>=0;offset--)
+            in.write((code.code>>offset)&1,1);
+        }
+    };
+    if(indexableSymbols)
+    {
+        reverseWrite(symbols[s]);
+    }
+    else
+    {
+        for(HuffmanCode code : symbols)
+        {
+            if(code.symbol == s)
             {
-                in.write((code.code>>offset)&1,1);
+                reverseWrite(code);
+                break;
             }
-            //in.write(code.code,code.length);
-            return;
         }
     }
 }

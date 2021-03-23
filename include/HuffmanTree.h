@@ -13,14 +13,14 @@ class HuffmanTree
 public:
     HuffmanTree();
     bool decode(int bit,SymbolType* decodedSymbol);
-    //Used in deflate, assumes lexicographical order
-    void loadFromCodeLength(vector<SymbolType> alphabet,vector<int> codeLengths, int maxLength);
-    //initStream(BitStream&); SymbolType nextCode();
+    //Used in deflate, assumes lexicographical order of the codes
+    //TODO: create a structure to represent the alphabet, it will include indexableSymbols, and a lambda given by the user to map the symbol to the index
+    void loadFromCodeLength(vector<int> codeLengths, int maxLength); //implicit alphabet
+    void loadFromCodeLength(vector<SymbolType> alphabet,bool indexableSymbols, vector<int> codeLengths, int maxLength);
     SymbolType readNext(BitStream & in);
     void write(BitStream & in, SymbolType s);
 private:
-    //CodeType currentCode = 0;
-    //unsigned int bitLength = 0;
+    bool indexableSymbols = true;
     struct HuffmanCode
     {
         SymbolType symbol;
@@ -29,12 +29,17 @@ private:
 
         int parentState = -1;
     };
-    vector<HuffmanCode> symbols;//previously named "codes"
+    vector<HuffmanCode> symbols;
     vector<array<int,2>> states;
 
     int currentState = 0;
 
+    //Helper methods to generate the huffman codes from the alphabet and code lengths
+    vector<int> computeStartCodes(vector<int> const & codeLengths, int maxLength);
+    void assignCode(int len, vector<int> & startCode, SymbolType sym);
     int addStates(HuffmanCode code);
+    void preloadSymbolTable(unsigned int alphabetSize);
+    void connectStatesToSymbols();
 };
 
 #include "HuffmanTree.tcc"

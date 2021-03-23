@@ -39,7 +39,7 @@ void test()
     HuffmanTree<char> tree;
     vector<char> alphabet = {'A','B','C','D','E'};
     vector<int> codeLengths = {2,1,3,3};//ignore E
-    tree.loadFromCodeLength(alphabet,codeLengths,3);
+    tree.loadFromCodeLength(alphabet,false,codeLengths,3);
     BitStream htStream;
     string msg = "ADCBACCDBC";
     for(char letter : msg)
@@ -50,7 +50,7 @@ void test()
     assert(htRes[0]==0b011'111'01);
     assert(htRes[1]==0b11'011'01'0);
     assert(htRes[2]==0b011'0'111'0);
-    htStream.reset();
+    //htStream.reset();
     for(char letter: msg)
     {
         //cout<<letter;
