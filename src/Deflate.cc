@@ -30,7 +30,7 @@ BitStream& Deflate::uncompress(BitStream &in)
     return out;
 }
 
-void Deflate::loadDynamicHuffmanTree(BitStream& in)
+void Deflate::loadDynamicHuffmanTrees(BitStream& in)
 {
     unsigned int HLIT = in.read(5)+257;
     unsigned int HDIST = in.read(5)+1;
@@ -83,6 +83,47 @@ void Deflate::loadDynamicHuffmanTree(BitStream& in)
     for(unsigned int i = HLIT; i < globalCodeLengths.size(); i++)
         distLengths.push_back(globalCodeLengths[i]);
     globalCodeLengths.resize(HLIT);//becomes literal/length lengths
+
+    literalTree.loadFromCodeLength(globalCodeLengths);
+    distanceTree.loadFromCodeLength(distLengths);
+}
+
+void Deflate::loadFixedHuffmanTrees(BitStream & in)
+{
+    vector<int> literalCodeLength;
+    for(int i = 0; i <= 143; i++)
+        literalCodeLength.push_back(8);
+    for(int i = 144; i <= 255; i++)
+        literalCodeLength.push_back(9);
+    for(int i = 256; i <= 279; i++)
+        literalCodeLength.push_back(7);
+    for(int i = 280; i <= 287; i++)
+        literalCodeLength.push_back(8);
+
+    vector<int> distCodeLength;
+    for(int i = 0; i <= 31; i++)
+        distCodeLength.push_back(5);
+
+    literalTree.loadFromCodeLength(literalCodeLength,9);
+    distanceTree.loadFromCodeLength(distCodeLength,5);
+}
+
+void Deflate::processDuplicatedSequence(BitStream & in, uint16_t length)
+{
+
+}
+
+void Deflate::processCompressedBlock(BitStream & in)
+{
+    uint16_t litLength;
+    do
+    {
+        litLength = literalTree.readNext(in);
+        if(litLength < 256)
+            out.write(litLength,8);
+        else
+            processDuplicatedSequence(in,litLength);
+    }while(litLength != 256);
 }
 
 void Deflate::processBlock(BitStream &in)
@@ -95,12 +136,13 @@ void Deflate::processBlock(BitStream &in)
         processUncompressedBlock(in);
         break;
     case 1:
+        loadFixedHuffmanTrees(in);
     case 2:
         if(blockType == 2)//dynamic huffman
         {
-            loadDynamicHuffmanTree(in);
+            loadDynamicHuffmanTrees(in);
         }
-        //processCompressedBlock(in);
+        processCompressedBlock(in);
         break;
     case 3:
         throw "Deflate Error: use of reserved type block - Aborting";

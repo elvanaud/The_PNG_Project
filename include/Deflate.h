@@ -2,6 +2,7 @@
 #define DEFLATE_H
 
 #include "BitStream.h"
+#include "HuffmanTree.h"
 
 class Deflate
 {
@@ -15,9 +16,15 @@ private:
     //BitStream & in;
     BitStream out;
     void processUncompressedBlock(BitStream &in);
-    void loadDynamicHuffmanTree(BitStream& in);
+    void processCompressedBlock(BitStream & in);
+    void processDuplicatedSequence(BitStream & in, uint16_t length);
+    void loadDynamicHuffmanTrees(BitStream& in);
+    void loadFixedHuffmanTrees(BitStream & in);
     void processBlock(BitStream &in);
     bool finalBlock = false;
+
+    HuffmanTree<uint16_t> literalTree;
+    HuffmanTree<uint8_t> distanceTree;
 };
 
 #endif // DEFLATE_H

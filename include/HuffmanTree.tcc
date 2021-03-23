@@ -1,4 +1,5 @@
 #include "HuffmanTree.h"
+#include <algorithm>
 
 template<class SymbolType>
 HuffmanTree<SymbolType>::HuffmanTree()
@@ -92,6 +93,12 @@ void HuffmanTree<SymbolType>::preloadSymbolTable(unsigned int alphabetSize)
 }
 
 template<class SymbolType>
+void HuffmanTree<SymbolType>::loadFromCodeLength(vector<int> codeLengths)
+{
+    loadFromCodeLength(codeLengths, *std::max_element(codeLengths.begin(),codeLengths.end()));
+}
+
+template<class SymbolType>
 void HuffmanTree<SymbolType>::loadFromCodeLength(vector<int> codeLengths, int maxLength)
 {
     indexableSymbols = true;
@@ -103,6 +110,12 @@ void HuffmanTree<SymbolType>::loadFromCodeLength(vector<int> codeLengths, int ma
     }
 
     connectStatesToSymbols();
+}
+
+template<class SymbolType>
+void HuffmanTree<SymbolType>::loadFromCodeLength(vector<SymbolType> alphabet, bool idxSym, vector<int> codeLengths)
+{
+    loadFromCodeLength(alphabet, idxSym, codeLengths, *std::max_element(codeLengths.begin(),codeLengths.end()));
 }
 
 template<class SymbolType>
