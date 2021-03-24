@@ -17,6 +17,9 @@ private:
     BitStream out;
     void processUncompressedBlock(BitStream &in);
     void processCompressedBlock(BitStream & in);
+    uint16_t parseTable(BitStream & in, uint16_t val, vector<uint16_t> const &threshold, vector<uint16_t> const &extrabit,vector<uint16_t> const &minValue);
+    uint16_t computeDistance(BitStream & in, uint16_t dist);
+    uint16_t computeLength(BitStream & in, uint16_t len);
     void processDuplicatedSequence(BitStream & in, uint16_t length);
     void loadDynamicHuffmanTrees(BitStream& in);
     void loadFixedHuffmanTrees(BitStream & in);

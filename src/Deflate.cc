@@ -108,9 +108,58 @@ void Deflate::loadFixedHuffmanTrees(BitStream & in)
     distanceTree.loadFromCodeLength(distCodeLength,5);
 }
 
-void Deflate::processDuplicatedSequence(BitStream & in, uint16_t length)
+uint16_t Deflate::parseTable(BitStream & in, uint16_t val, vector<uint16_t> const &threshold, vector<uint16_t> const &extrabit,vector<uint16_t> const &minValue)
 {
+    int i = threshold.size()-1;
+    for(; i>=0; i--)
+    {
+        if(val >= threshold[i])
+            break;
+    }
 
+    uint16_t diff = val-threshold[i];
+    uint16_t step = 1<<extrabit[i];
+    uint16_t base = diff*step+minValue[i];
+    return base+in.read(extrabit[i]);
+}
+
+uint16_t Deflate::computeDistance(BitStream & in, uint16_t dist)
+{
+    vector<uint16_t> threshold  = {0, 4, 6, 8, 10, 12, 14,16,18,20,22,24,26,28};
+    vector<uint16_t> extrabit = {0,1,2,3,4,5,6,7,8,9,10,11,12,13};
+    vector<uint16_t> minValue = {1,5,9,17,33,65,129,257,513,1025,2049,4097,8193,16385};//1+power of 2
+
+    return parseTable(in,dist,threshold,extrabit,minValue);
+}
+
+uint16_t Deflate::computeLength(BitStream & in, uint16_t len)
+{
+    vector<uint16_t> threshold  = {257, 265, 269, 273, 277, 281, 285};
+    vector<uint16_t> extrabit = {0,1,2,3,4,5,0};
+    vector<uint16_t> minValue = {3,11,19,35,67,131,255};//3+power of 2
+
+    return parseTable(in,len,threshold,extrabit,minValue);
+}
+
+void Deflate::processDuplicatedSequence(BitStream & in, uint16_t len)
+{
+    if(len == 256) return;
+    uint16_t length = computeLength(in,len);
+    uint16_t distance = computeDistance(in,distanceTree.readNext(in));
+
+    vector<uint8_t> const & buffer(out.getBufferRef());
+    int initialEndOfBuffer = buffer.size();
+    int startIndex = initialEndOfBuffer-distance;
+    if(startIndex < 0) throw "Deflate Error: A duplicated sequence can't reference data before the beginning of the output stream";
+
+    int currentIndex = startIndex;
+    for(;length > 0; length--)
+    {
+        out.write(buffer[currentIndex],8);
+        currentIndex++;
+        if(currentIndex>=initialEndOfBuffer)
+            currentIndex = startIndex;
+    }
 }
 
 void Deflate::processCompressedBlock(BitStream & in)

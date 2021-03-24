@@ -144,7 +144,12 @@ void BitStream::write(uint32_t d, int numBits)
     }
 }
 
-vector<BaseType> BitStream::getData()
+vector<BaseType> BitStream::getData() const
+{
+    return data;
+}
+
+vector<BaseType> const & BitStream::getBufferRef() const
 {
     return data;
 }

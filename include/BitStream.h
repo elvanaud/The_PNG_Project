@@ -27,7 +27,8 @@ public:
     void reset(CursorType cType);
     void skipToFullByte(CursorType cType);//add a method to know when writing that the current byte is full
 
-    vector<BaseType> getData(); //outputs a copy of written data at the moment of calling
+    vector<BaseType> getData() const; //outputs a copy of written data at the moment of calling
+    vector<BaseType> const & getBufferRef() const;
 private:
     vector<BaseType> data;
     struct Cursor
