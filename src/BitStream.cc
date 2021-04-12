@@ -9,7 +9,19 @@
 BitStream::BitStream() //: data(*new vector<BaseType>)
 {
     dataManuallyAllocated = true;
-    checkEndOfStream();
+    //checkEndOfStream();
+    reset(ReadCursor);
+    reset(WriteCursor);
+}
+
+BitStream::BitStream(UnitDirection dir) : BitStream()
+{
+    //BitStream();
+    rCursor.unitDirection = dir;
+    wCursor.unitDirection = dir;
+
+    reset(ReadCursor);
+    reset(WriteCursor);
 }
 
 BitStream::BitStream(vector<BaseType> const &d) : data(d)
@@ -105,6 +117,8 @@ uint32_t BitStream::read32(int numBits)
 void BitStream::write(uint32_t d, int numBits)
 {
     int remainingBitsInUnit = BaseBitLength-wCursor.bitOffset;
+    if(wCursor.unitDirection == LeftToRight)
+        remainingBitsInUnit = wCursor.bitOffset+1;
     if(dataManuallyAllocated)//||extendData/writeExtend
     {
         //extend data vector as much as needed, otherwise: endOfStreamReached set (except if a parameter extendDataWhenWrite is setby user)
@@ -121,24 +135,39 @@ void BitStream::write(uint32_t d, int numBits)
     const int dataMask = ((1<<numBits)-1);
 
     d &= dataMask;
+    uint32_t d2 = d;
+    int offset = numBits-wCursor.bitOffset-1);
+    if(offset < 0)
+        offset *= -1;
+    if(wCursor.unitDirection == RightToLeft)
+        d2 = d<<wCursor.bitOffset;
+    else
+        d2 = d >> ;
+    data[wCursor.currentUnit] |= d2;
 
-    data[wCursor.currentUnit] |= d<<wCursor.bitOffset;
-
+    d2 = d;
     while(numBits > remainingBitsInUnit)
     {
-        d>>= remainingBitsInUnit;
-        numBits -= remainingBitsInUnit;
-        remainingBitsInUnit = BaseBitLength;
         wCursor.currentUnit++;
         wCursor.bitOffset = 0;
+        if(wCursor.unitDirection == LeftToRight)
+            wCursor.bitOffset = BaseBitLength-1;
 
-        data[wCursor.currentUnit] = d;
+        if(wCursor.unitDirection == RightToLeft)
+            d2>>= remainingBitsInUnit;
+        else
+            d2 = (d >> (numBits-wCursor.bitOffset));
+        numBits -= remainingBitsInUnit;
+        remainingBitsInUnit = BaseBitLength;
+
+
+        data[wCursor.currentUnit] = d2;
     }
     wCursor.bitOffset += numBits;
 
     if(wCursor.bitOffset >= BaseBitLength)
     {
-        wCursor.bitOffset = 0;
+        wCursor.bitOffset = (wCursor.unitDirection == LeftToRight ? BaseBitLength-1: 0);
         wCursor.currentUnit++;
         //checkEndOfStream();
     }
@@ -157,7 +186,8 @@ vector<BaseType> const & BitStream::getBufferRef() const
 void BitStream::reset(CursorType cType)
 {
     Cursor * curs = parseCursorType(cType);
-    curs->currentUnit = curs->bitOffset = 0;
+    curs->currentUnit = 0;
+    curs->bitOffset = (curs->unitDirection == LeftToRight ? BaseBitLength-1: 0);
     endOfStream = false;
     checkEndOfStream();
 }

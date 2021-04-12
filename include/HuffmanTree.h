@@ -33,7 +33,8 @@ private:
 
         int parentState = -1;
     };
-    vector<HuffmanCode> symbols;
+    vector<HuffmanCode> huffCodes; //for some reason gdb crashes when this is named "symbols"
+    //vector<HuffmanCode>symbols2;
     vector<array<int,2>> states;
 
     int currentState = 0;

@@ -10,6 +10,8 @@ const unsigned int BaseBitLength = 8;
 class BitStream
 {
 public:
+    enum UnitDirection{LeftToRight, RightToLeft};
+    BitStream(UnitDirection dir);
     BitStream();
     ~BitStream();
     BitStream(vector<BaseType> const &d);
@@ -35,6 +37,7 @@ private:
     {
         unsigned int currentUnit = 0;
         unsigned int bitOffset = 0;
+        UnitDirection unitDirection = RightToLeft;
     };
     Cursor rCursor;
     Cursor wCursor;

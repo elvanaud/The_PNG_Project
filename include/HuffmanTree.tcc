@@ -17,7 +17,7 @@ bool HuffmanTree<SymbolType>::decode(int bit,SymbolType* decodedSymbol)
     currentState = states[currentState][bit];
     if(currentState >= nbStates)
     {
-        *decodedSymbol = symbols[currentState-nbStates].symbol;
+        *decodedSymbol = huffCodes[currentState-nbStates].symbol;
         currentState = 0;
         return true;
     }
@@ -63,8 +63,8 @@ void HuffmanTree<SymbolType>::assignCode(int len, vector<int> & startCodes, Symb
         code.length = len;
 
         code.parentState = addStates(code);
-        if(indexableSymbols) symbols[code.symbol] = code;
-        else symbols.push_back(code);
+        if(indexableSymbols) huffCodes[code.symbol] = code;
+        else huffCodes.push_back(code);
         startCodes[len]++;
     }
 }
@@ -74,10 +74,10 @@ template<class SymbolType>
 void HuffmanTree<SymbolType>::connectStatesToSymbols()
 {
     int nbStates = states.size();
-    for(unsigned int i = 0; i < symbols.size(); i++)
+    for(unsigned int i = 0; i < huffCodes.size(); i++)
     {
         //todo: check still -1 or throw
-        states[symbols[i].parentState][symbols[i].code&1] = i+nbStates;
+        states[huffCodes[i].parentState][huffCodes[i].code&1] = i+nbStates;
     }
 }
 
@@ -88,7 +88,7 @@ void HuffmanTree<SymbolType>::preloadSymbolTable(unsigned int alphabetSize)
     {
         HuffmanCode emptyCode;
         for(unsigned int i = 0; i < alphabetSize; i++)
-            symbols.push_back(emptyCode);
+            huffCodes.push_back(emptyCode);
     }
 }
 
@@ -184,11 +184,11 @@ void HuffmanTree<SymbolType>::write(BitStream & in, SymbolType s)
     };
     if(indexableSymbols)
     {
-        reverseWrite(symbols[s]);
+        reverseWrite(huffCodes[s]);
     }
     else
     {
-        for(HuffmanCode code : symbols)
+        for(HuffmanCode code : huffCodes)
         {
             if(code.symbol == s)
             {
