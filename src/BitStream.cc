@@ -24,8 +24,14 @@ BitStream::BitStream(UnitDirection dir) : BitStream()
     reset(WriteCursor);
 }
 
-BitStream::BitStream(vector<BaseType> const &d) : data(d)
+BitStream::BitStream(vector<BaseType> const &d, UnitDirection dir) : data(d)
 {
+    rCursor.unitDirection = dir;
+    wCursor.unitDirection = dir;
+
+    reset(ReadCursor);
+    reset(WriteCursor);
+
     checkEndOfStream();
 }
 
@@ -87,6 +93,40 @@ uint32_t BitStream::read32(int numBits)
     const int finalMask = ((1<<numBits)-1);
     int remainingBitsInUnit = BaseBitLength-rCursor.bitOffset;
     int bitsRead = remainingBitsInUnit;
+
+    auto readLeftToRight = [&]()->uint32_t
+    {
+        remainingBitsInUnit = rCursor.bitOffset+1;
+        while(numBits > remainingBitsInUnit)
+        {
+            res <<= BaseBitLength;
+            res |= data[rCursor.currentUnit];
+            rCursor.currentUnit++;
+            rCursor.bitOffset = BaseBitLength-1;
+            numBits -= remainingBitsInUnit;
+            remainingBitsInUnit = BaseBitLength;
+            if(checkEndOfStream()) break;
+        }
+        if(numBits <= remainingBitsInUnit)
+        {
+            if(checkEndOfStream()) throw "Can't read: end of stream reached";
+            res <<= numBits;
+            res |= (data[rCursor.currentUnit]>>(remainingBitsInUnit-numBits));
+            rCursor.bitOffset-=numBits;
+            if(rCursor.bitOffset < 0)
+            {
+                rCursor.currentUnit++;
+                rCursor.bitOffset = BaseBitLength-1;
+                checkEndOfStream();
+            }
+        }
+        res &= finalMask;
+        return res;
+    };
+    if(rCursor.unitDirection == LeftToRight)
+    {
+        return readLeftToRight();
+    }
 
     res = (d >> rCursor.bitOffset);
 

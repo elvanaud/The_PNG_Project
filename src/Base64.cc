@@ -27,7 +27,9 @@ vector<uint8_t> b64_decode(string msg)
         }
         else
         {
-            cout << "ignoring invalid base64 character:"<<c<<endl;//todo: throw error/warning message
+            string err = "ignoring invalid base64 character: ";
+            err += c;
+            throw err; //maybe I should keep executing and only throw at the end, so that random invalid chars don't interupt the whole process for nothing
             continue;
         }
         //binary now contains a 6bit value
@@ -36,4 +38,46 @@ vector<uint8_t> b64_decode(string msg)
     vector<uint8_t> data = bs.getData();
     if(skipLastByte) data.pop_back();
     return data;
+}
+
+string b64_encode(vector<uint8_t> data)
+{
+    BitStream bs(data, BitStream::LeftToRight);
+    string res;
+
+    auto mapBinaryToChar = [&res](uint8_t binary)
+    {
+        if(binary < 26) {
+            res += ('A'+binary);
+        } else if(binary < 52) {
+            res += ('a'+binary-26);
+        } else if(binary < 62) {
+            res += ('0'+binary-52);
+        } else if(binary == 62) {
+            res += '+';
+        } else if(binary == 63) {
+            res += '/';
+        }
+    };
+    try
+    {
+        for(;;) //process until end of stream reached
+        {
+            uint8_t binary = bs.read(6);
+            mapBinaryToChar(binary);
+        }
+    }
+    catch(const char* msg) //eos reached
+    {
+        int remaining = res.size()%4;
+        if(remaining > 0) //needs padding, and the last char hasn't been treated yet
+        {
+            uint8_t b = (data[data.size()-1]&0x03)<<4; //reconstitute the last 6bit binary value
+            mapBinaryToChar(b);
+            for (int i = 0;i < 4-remaining-1;i++) res += '=';
+        }
+        return res;
+    }
+
+    return res;
 }

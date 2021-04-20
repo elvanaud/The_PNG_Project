@@ -36,7 +36,7 @@ void test()
     assert(outData[3]==0b0001'1110);
     cout << "BitStream write test pass !" << endl;
 
-    cout << "HuffmanTree test..."<<endl;
+    cout << "HuffmanTree write test..."<<endl;
     HuffmanTree<char> tree;
     vector<char> alphabet = {'A','B','C','D','E'};
     vector<int> codeLengths = {2,1,3,3};//ignore E
@@ -57,7 +57,7 @@ void test()
         //cout<<letter;
         assert(tree.readNext(htStream)==letter);
     }
-    cout << "HuffmanTree test pass !"<<endl;
+    cout << "HuffmanTree write test pass !"<<endl;
 
     cout << "Launching BitStream Left to Right write test..." << endl;
     BitStream rbs(BitStream::LeftToRight);
@@ -75,15 +75,37 @@ void test()
     assert(data[3] == 0b01'110'010);
     cout << "BitStream Left to Right write test pass !" << endl;
 
+    cout << "Launching BitStream Left to Right read test..." << endl;
+    data = {0b0111'0110,0b1101'0010,0b1010'1110,0b1100'1010};
+    BitStream ribs(data, BitStream::LeftToRight);
+    assert(ribs.read(5) == 0b0111'0);
+    assert(ribs.read(5) == 0b110'11);
+    assert(ribs.read(10) == 0b01'0010'1010);
+    assert(ribs.read(2) == 0b11);
+    assert(ribs.read(3) == 0b10'1);
+    assert(ribs.read(7) == 0b100'1010);
+    cout << "BitStream Left to Right read test pass !"<< endl;
+
     cout << "Launching Base64 decode test..." << endl;
     string realMsg = "Bonjour, voici un message qui sera, normallement, je l'espere decode par mon decodeur base 64 !!!";
+    string encodedMsg = "Qm9uam91ciwgdm9pY2kgdW4gbWVzc2FnZSBxdWkgc2VyYSwgbm9ybWFsbGVtZW50LCBqZSBsJ2VzcGVyZSBkZWNvZGUgcGFyIG1vbiBkZWNvZGV1ciBiYXNlIDY0ICEhIQ==";
     string outMsg;
-    for(uint8_t c : b64_decode("Qm9uam91ciwgdm9pY2kgdW4gbWVzc2FnZSBxdWkgc2VyYSwgbm9ybWFsbGVtZW50LCBqZSBsJ2VzcGVyZSBkZWNvZGUgcGFyIG1vbiBkZWNvZGV1ciBiYXNlIDY0ICEhIQ=="))
+    for(uint8_t c : b64_decode(encodedMsg))
     {
         outMsg += char(c);
     }
     assert(outMsg == realMsg);
     cout << "Base64 decode test pass !" << endl;
+
+    cout << "Launching Base64 encode test..." << endl;
+    vector<uint8_t> dataToEncode;
+    for(char c : realMsg)
+    {
+        dataToEncode.push_back((uint8_t)c);
+    }
+    string encoded = b64_encode(dataToEncode);
+    assert(encoded == encodedMsg);
+    cout << "Base64 encode test pass !" << endl;
 }
 
 bool mainTests()

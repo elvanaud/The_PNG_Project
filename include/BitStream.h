@@ -14,7 +14,7 @@ public:
     BitStream(UnitDirection dir);
     BitStream();
     ~BitStream();
-    BitStream(vector<BaseType> const &d);
+    BitStream(vector<BaseType> const &d, UnitDirection dir=RightToLeft);
     uint8_t     read8(int numBits);
     uint16_t    read16(int numBits);
     uint32_t    read32(int numBits);
