@@ -114,11 +114,58 @@ uint32_t BitStream::read32(int numBits)
     return res;
 }
 
+void BitStream::writeLeftToRight(uint32_t d, int numBits)
+{
+    int remainingBitsInUnit = wCursor.bitOffset+1;
+    if(dataManuallyAllocated)//||extendData/writeExtend
+    {
+        //extend data vector as much as needed, otherwise: endOfStreamReached set (except if a parameter extendDataWhenWrite is setby user)
+        if(data.size()==wCursor.currentUnit)data.push_back(0);
+        if(numBits > remainingBitsInUnit)
+        {
+            int nbUnits = ceil(float(numBits-remainingBitsInUnit) / BaseBitLength);
+            for(;nbUnits>0;--nbUnits)
+                data.push_back(0);
+        }
+        endOfStream = false;
+        checkEndOfStream();
+    }
+
+    const int dataMask = ((1<<numBits)-1);
+    d &= dataMask;
+
+    while(numBits > remainingBitsInUnit)
+    {
+        data[wCursor.currentUnit] |= d>>(numBits-remainingBitsInUnit);
+
+        wCursor.currentUnit++;
+        wCursor.bitOffset = BaseBitLength-1;
+
+        numBits -= remainingBitsInUnit;
+        remainingBitsInUnit = BaseBitLength;
+    }
+
+    if(numBits <= remainingBitsInUnit)
+    {
+        data[wCursor.currentUnit] |= d<<(wCursor.bitOffset-numBits+1);
+        wCursor.bitOffset-=numBits;
+        if(wCursor.bitOffset<0)
+        {
+            wCursor.currentUnit++;
+            wCursor.bitOffset = BaseBitLength-1;
+        }
+    }
+}
+
 void BitStream::write(uint32_t d, int numBits)
 {
-    int remainingBitsInUnit = BaseBitLength-wCursor.bitOffset;
     if(wCursor.unitDirection == LeftToRight)
-        remainingBitsInUnit = wCursor.bitOffset+1;
+    {
+        writeLeftToRight(d,numBits);
+        return;
+    }
+
+    int remainingBitsInUnit = BaseBitLength-wCursor.bitOffset;
     if(dataManuallyAllocated)//||extendData/writeExtend
     {
         //extend data vector as much as needed, otherwise: endOfStreamReached set (except if a parameter extendDataWhenWrite is setby user)
@@ -135,39 +182,25 @@ void BitStream::write(uint32_t d, int numBits)
     const int dataMask = ((1<<numBits)-1);
 
     d &= dataMask;
-    uint32_t d2 = d;
-    int offset = numBits-wCursor.bitOffset-1);
-    if(offset < 0)
-        offset *= -1;
-    if(wCursor.unitDirection == RightToLeft)
-        d2 = d<<wCursor.bitOffset;
-    else
-        d2 = d >> ;
-    data[wCursor.currentUnit] |= d2;
+    data[wCursor.currentUnit] |= d<<wCursor.bitOffset;
 
-    d2 = d;
     while(numBits > remainingBitsInUnit)
     {
         wCursor.currentUnit++;
         wCursor.bitOffset = 0;
-        if(wCursor.unitDirection == LeftToRight)
-            wCursor.bitOffset = BaseBitLength-1;
+        d>>= remainingBitsInUnit;
 
-        if(wCursor.unitDirection == RightToLeft)
-            d2>>= remainingBitsInUnit;
-        else
-            d2 = (d >> (numBits-wCursor.bitOffset));
         numBits -= remainingBitsInUnit;
         remainingBitsInUnit = BaseBitLength;
 
 
-        data[wCursor.currentUnit] = d2;
+        data[wCursor.currentUnit] = d;
     }
     wCursor.bitOffset += numBits;
 
     if(wCursor.bitOffset >= BaseBitLength)
     {
-        wCursor.bitOffset = (wCursor.unitDirection == LeftToRight ? BaseBitLength-1: 0);
+        wCursor.bitOffset = 0;
         wCursor.currentUnit++;
         //checkEndOfStream();
     }

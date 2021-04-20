@@ -36,7 +36,7 @@ private:
     struct Cursor
     {
         unsigned int currentUnit = 0;
-        unsigned int bitOffset = 0;
+        int bitOffset = 0;
         UnitDirection unitDirection = RightToLeft;
     };
     Cursor rCursor;
@@ -45,6 +45,7 @@ private:
     Cursor * parseCursorType(CursorType t);
 
     bool dataManuallyAllocated = false;//todo: rename writeExtend
+    void writeLeftToRight(uint32_t d, int numBits);
 };
 
 #endif // BITSTREAM_H
