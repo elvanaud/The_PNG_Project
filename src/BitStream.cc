@@ -86,7 +86,8 @@ void BitStream::skipToFullByte(CursorType cType)
 
 uint32_t BitStream::read32(int numBits)
 {
-    if(checkEndOfStream()) throw "Can't read: end of stream reached";
+    if(checkEndOfStream())
+        throw "Can't read: end of stream reached";
     BaseType d = data[rCursor.currentUnit];
     uint32_t res = 0;
 

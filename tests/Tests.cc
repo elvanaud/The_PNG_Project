@@ -36,7 +36,7 @@ void test()
     assert(outData[3]==0b0001'1110);
     cout << "BitStream write test pass !" << endl;
 
-    cout << "HuffmanTree write test..."<<endl;
+    cout << "HuffmanTree test..."<<endl;
     HuffmanTree<char> tree;
     vector<char> alphabet = {'A','B','C','D','E'};
     vector<int> codeLengths = {2,1,3,3};//ignore E
@@ -57,7 +57,7 @@ void test()
         //cout<<letter;
         assert(tree.readNext(htStream)==letter);
     }
-    cout << "HuffmanTree write test pass !"<<endl;
+    cout << "HuffmanTree test pass !"<<endl;
 
     cout << "Launching BitStream Left to Right write test..." << endl;
     BitStream rbs(BitStream::LeftToRight);

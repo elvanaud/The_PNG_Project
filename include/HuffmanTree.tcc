@@ -76,8 +76,8 @@ void HuffmanTree<SymbolType>::connectStatesToSymbols()
     int nbStates = states.size();
     for(unsigned int i = 0; i < huffCodes.size(); i++)
     {
-        //todo: check still -1 or throw
-        states[huffCodes[i].parentState][huffCodes[i].code&1] = i+nbStates;
+        if(huffCodes[i].parentState >= 0) //throw "Huffman error: parent state is -1";
+            states[huffCodes[i].parentState][huffCodes[i].code&1] = i+nbStates;
     }
 }
 
@@ -93,7 +93,7 @@ void HuffmanTree<SymbolType>::preloadSymbolTable(unsigned int alphabetSize)
 }
 
 template<class SymbolType>
-void HuffmanTree<SymbolType>::loadFromCodeLength(vector<int> codeLengths)
+void HuffmanTree<SymbolType>::loadFromCodeLength(vector<int> &codeLengths)
 {
     loadFromCodeLength(codeLengths, *std::max_element(codeLengths.begin(),codeLengths.end()));
 }

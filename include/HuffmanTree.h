@@ -17,7 +17,7 @@ public:
     //TODO: create a structure to represent the alphabet, it will include indexableSymbols, and a lambda given by the user to map the symbol to the index
     //Implicit alphabet:
     void loadFromCodeLength(vector<int> codeLengths, int maxLength);
-    void loadFromCodeLength(vector<int> codeLengths);
+    void loadFromCodeLength(vector<int> &codeLengths);
     //Explicit alphabet:
     void loadFromCodeLength(vector<SymbolType> alphabet,bool indexableSymbols, vector<int> codeLengths);
     void loadFromCodeLength(vector<SymbolType> alphabet,bool indexableSymbols, vector<int> codeLengths, int maxLength);
