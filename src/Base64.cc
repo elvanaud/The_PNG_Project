@@ -4,7 +4,7 @@
 vector<uint8_t> b64_decode(string msg)
 {
 
-    bool skipLastByte = true;
+    bool skipLastByte = false;
     BitStream bs(BitStream::LeftToRight);
     for(char c : msg)
     {
