@@ -38,12 +38,16 @@ void Deflate::loadDynamicHuffmanTrees(BitStream& in)
 
     vector<int> codeLengthAlphabet = {16,17,18,0,8,7,9,6,10,5,11,4,12,3,13,2,14,1,15};
     vector<int> codeLengthCodes = {};
+    for(int i = 0; i < codeLengthAlphabet.size(); i++)
+        codeLengthCodes.push_back(0);
     for(unsigned int i = 0;i<HCLEN;i++)
     {
-        codeLengthCodes.push_back(in.read(3));
+        //codeLengthCodes.push_back(in.read(3));
+        codeLengthCodes[codeLengthAlphabet[i]] = in.read(3);
     }
     HuffmanTree<int> predecodeTree;
-    predecodeTree.loadFromCodeLength(codeLengthAlphabet,true,codeLengthCodes,7);
+    //predecodeTree.loadFromCodeLength(codeLengthAlphabet,true,codeLengthCodes,7);
+    predecodeTree.loadFromCodeLength(codeLengthCodes);
 
     vector<int> globalCodeLengths;
     int lastLength = 0;

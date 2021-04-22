@@ -2,6 +2,7 @@
 #define HUFFMANTREE_H
 
 #include "Common.h"
+#include "BitStream.h"
 #include <array>
 using std::array;
 
