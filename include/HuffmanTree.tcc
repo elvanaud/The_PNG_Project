@@ -171,7 +171,7 @@ SymbolType HuffmanTree<SymbolType>::readNext(BitStream & in)
 }
 
 template<class SymbolType>
-void HuffmanTree<SymbolType>::write(BitStream & in, SymbolType s)
+void HuffmanTree<SymbolType>::write(BitStream & out, SymbolType s)
 {
     //The code has to be written in reverse order !
     auto reverseWrite = [&](HuffmanCode & code)
@@ -179,7 +179,7 @@ void HuffmanTree<SymbolType>::write(BitStream & in, SymbolType s)
         int offset = code.length-1;
         for(;offset>=0;offset--)
         {
-            in.write((code.code>>offset)&1,1);
+            out.write((code.code>>offset)&1,1);
         }
     };
     if(indexableSymbols)

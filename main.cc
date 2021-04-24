@@ -12,20 +12,30 @@ int main()
     //mainTests();
 
     vector<uint8_t> data;
+    
     string compressedMsg = "VVBBbgMhDPyKb7lEeUTSjzjgVEQYEzCrqq/pX/qxjrvtYS2wkTUzHnO19rQ1zrRZqd9ftBq5fLjQawk9hfTEvQ9BgymZ4jmnDOrgRAJrgDAdPbVGfRggUd4HqwrlOP/EAkSWR2WXc4i3X313aZk6zxixD05SmR7WkoMCVF6QFC2Ykmx1Ui6T7tYuCHoDLtS2aKqsewUMe3Tx4shrd5tDaRDD/2fYUnboHfe60HX/jxA/1Pge/svVasGl2wmL0za4qDSnUXJJq8rB3R4/";
     data = b64_decode(compressedMsg);
+    
+
+    
+    string clearMsg = "Bonjour, bonjour, bonjour, j'espere que vous allez tres bien !!!!!!! Bonjour que vous aller aller dfvdfvrbtrszzzzcddbgd hihihihihhahahaha";
+    for(char c : clearMsg)
+        ;//data.push_back(c);
+    
 
     try
     {
         BitStream bs(data);
         Deflate deflator;
-        //BitStream os;
-
+        
         BitStream& os(deflator.uncompress(bs));
 
         vector<uint8_t> result = os.getData();
         for(uint8_t r : result)
             cout << char(r);
+        
+
+        //deflator.compress(data);
     }
     catch(const char * msg)
     {

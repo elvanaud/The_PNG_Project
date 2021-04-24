@@ -23,7 +23,7 @@ public:
     void loadFromCodeLength(vector<SymbolType> alphabet,bool indexableSymbols, vector<int> codeLengths);
     void loadFromCodeLength(vector<SymbolType> alphabet,bool indexableSymbols, vector<int> codeLengths, int maxLength);
     SymbolType readNext(BitStream & in);
-    void write(BitStream & in, SymbolType s);
+    void write(BitStream & out, SymbolType s);
 private:
     bool indexableSymbols = true;
     struct HuffmanCode

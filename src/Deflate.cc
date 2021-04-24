@@ -92,7 +92,7 @@ void Deflate::loadDynamicHuffmanTrees(BitStream& in)
     distanceTree.loadFromCodeLength(distLengths);
 }
 
-void Deflate::loadFixedHuffmanTrees(BitStream & in)
+void Deflate::loadFixedHuffmanTrees()
 {
     vector<int> literalCodeLength;
     for(int i = 0; i <= 143; i++)
@@ -111,45 +111,77 @@ void Deflate::loadFixedHuffmanTrees(BitStream & in)
     literalTree.loadFromCodeLength(literalCodeLength,9);
     distanceTree.loadFromCodeLength(distCodeLength,5);
 }
-
-uint16_t Deflate::parseTable(BitStream & in, uint16_t val, vector<uint16_t> const &threshold, vector<uint16_t> const &extrabit,vector<uint16_t> const &minValue)
+Deflate::SelectedParse Deflate::tableParse(uint16_t val, vector<uint16_t> const &thresholds, vector<uint16_t> const &extrabits,vector<uint16_t> const &minValues)
 {
-    int i = threshold.size()-1;
+    int i = thresholds.size()-1;
     for(; i>=0; i--)
     {
-        if(val >= threshold[i])
+        if(val >= thresholds[i])
             break;
     }
 
-    uint16_t diff = val-threshold[i];
-    uint16_t step = 1<<extrabit[i];
-    uint16_t base = diff*step+minValue[i];
-    return base+in.read(extrabit[i]);
+    //uint16_t diff = val-threshold[i];
+    //uint16_t step = 1<<extrabit[i];
+    return SelectedParse{  
+                    threshold: thresholds[i],
+                    extrabit: extrabits[i],
+                    minValue: minValues[i],
+                    diff: val-thresholds[i],
+                    step: 1<<extrabits[i]};
+}
+uint16_t Deflate::tableDecode(BitStream & in, ParseTables const & table, uint16_t val)//, vector<uint16_t> const &threshold, vector<uint16_t> const &extrabit,vector<uint16_t> const &minValue)
+{
+    /*int i = table.threshold.size()-1;
+    for(; i>=0; i--)
+    {
+        if(val >= table.threshold[i])
+            break;
+    }
+
+    uint16_t diff = val-table.threshold[i];
+    uint16_t step = 1<<table.extrabit[i];*/
+    SelectedParse parsed = tableParse(val, table.threshold, table.extrabit, table.minValue);
+
+    uint16_t base = parsed.diff*parsed.step+parsed.minValue;
+    return base+in.read(parsed.extrabit);
+}
+
+uint16_t Deflate::tableEncode(BitStream & out, ParseTables const & table, uint16_t val)
+{
+    /*int i = table.minValue.size()-1;
+    for(; i>=0; i--)
+    {
+        if(val >= table.minValue[i])
+            break;
+    }
+
+    uint16_t diff = val-table.minValue[i];
+    uint16_t step = 1<<table.extrabit[i];*/
+    SelectedParse parsed = tableParse(val, table.minValue, table.extrabit, table.threshold);//careful: we need to reverse the threshold and minValue(TODO: rename those fields)
+
+    int level = parsed.diff / parsed.step;
+    int extra = parsed.diff % parsed.step;
+    int code = parsed.threshold + level;
+    literalTree.write(out,code);
+    out.write(extra,parsed.extrabit);
+    return 0;
 }
 
 uint16_t Deflate::computeDistance(BitStream & in, uint16_t dist)
 {
-    vector<uint16_t> threshold  = {0, 4, 6, 8, 10, 12, 14,16,18,20,22,24,26,28};
-    vector<uint16_t> extrabit = {0,1,2,3,4,5,6,7,8,9,10,11,12,13};
-    vector<uint16_t> minValue = {1,5,9,17,33,65,129,257,513,1025,2049,4097,8193,16385};//1+power of 2
-
-    return parseTable(in,dist,threshold,extrabit,minValue);
+    return tableDecode(in,distTable,dist);
 }
 
 uint16_t Deflate::computeLength(BitStream & in, uint16_t len)
 {
-    vector<uint16_t> threshold  = {257, 265, 269, 273, 277, 281, 285};
-    vector<uint16_t> extrabit = {0,1,2,3,4,5,0};
-    vector<uint16_t> minValue = {3,11,19,35,67,131,255};//3+power of 2
-
-    return parseTable(in,len,threshold,extrabit,minValue);
+    return tableDecode(in,lengthTable,len);
 }
 
 void Deflate::processDuplicatedSequence(BitStream & in, uint16_t len)
 {
     if(len == 256) return;
-    uint16_t length = computeLength(in,len);
-    uint16_t distance = computeDistance(in,distanceTree.readNext(in));
+    uint16_t length = computeLength(in,len); //tableDecode(in,lengthTable,len);//
+    uint16_t distance = computeDistance(in,distanceTree.readNext(in)); //tableDecode(in,distTable,distanceTree.readNext(in));//
 
     vector<uint8_t> const & buffer(out.getBufferRef());
     int initialEndOfBuffer = buffer.size();
@@ -189,7 +221,7 @@ void Deflate::processBlock(BitStream &in)
         processUncompressedBlock(in);
         break;
     case 1:
-        loadFixedHuffmanTrees(in);
+        loadFixedHuffmanTrees();
     case 2:
         if(blockType == 2)//dynamic huffman
         {
