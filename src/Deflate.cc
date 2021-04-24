@@ -131,40 +131,26 @@ Deflate::SelectedParse Deflate::tableParse(uint16_t val, vector<uint16_t> const 
 }
 uint16_t Deflate::tableDecode(BitStream & in, ParseTables const & table, uint16_t val)//, vector<uint16_t> const &threshold, vector<uint16_t> const &extrabit,vector<uint16_t> const &minValue)
 {
-    /*int i = table.threshold.size()-1;
-    for(; i>=0; i--)
-    {
-        if(val >= table.threshold[i])
-            break;
-    }
-
-    uint16_t diff = val-table.threshold[i];
-    uint16_t step = 1<<table.extrabit[i];*/
     SelectedParse parsed = tableParse(val, table.threshold, table.extrabit, table.minValue);
 
     uint16_t base = parsed.diff*parsed.step+parsed.minValue;
     return base+in.read(parsed.extrabit);
 }
 
-uint16_t Deflate::tableEncode(BitStream & out, ParseTables const & table, uint16_t val)
+Deflate::SelectedParse Deflate::tableEncode(BitStream & out, ParseTables const & table, uint16_t val)
 {
-    /*int i = table.minValue.size()-1;
-    for(; i>=0; i--)
-    {
-        if(val >= table.minValue[i])
-            break;
-    }
-
-    uint16_t diff = val-table.minValue[i];
-    uint16_t step = 1<<table.extrabit[i];*/
     SelectedParse parsed = tableParse(val, table.minValue, table.extrabit, table.threshold);//careful: we need to reverse the threshold and minValue(TODO: rename those fields)
 
     int level = parsed.diff / parsed.step;
     int extra = parsed.diff % parsed.step;
-    int code = parsed.threshold + level;
-    literalTree.write(out,code);
-    out.write(extra,parsed.extrabit);
-    return 0;
+    int code = parsed.minValue + level;
+
+    parsed.extra = extra;
+    parsed.code = code;
+    //distanceTree.write(out,code);
+    //literalTree.write(out,code);
+    //out.write(extra,parsed.extrabit);
+    return parsed;
 }
 
 uint16_t Deflate::computeDistance(BitStream & in, uint16_t dist)

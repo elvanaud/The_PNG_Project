@@ -17,7 +17,7 @@ struct SubChainPointer
     bool duplicated = false;
 };
 
-void Deflate::compress(vector<uint8_t> &data)//BitStream &in)
+vector<uint8_t> Deflate::compress(vector<uint8_t> &data)//BitStream &in)
 {
     unordered_map<uint32_t, list<SubChainPointer>> hashmap;
     vector<SubChainPointer> output; //either points to unaltered chains in the original data or duplicated sequences that references previously appearing chains
@@ -92,6 +92,7 @@ void Deflate::compress(vector<uint8_t> &data)//BitStream &in)
     BitStream out;
     out.write(1,1);//final block
     out.write(1,2); //fixed huffman
+    int currentIdx = 0;
     for(SubChainPointer ptr : output)
     {
         if(!ptr.duplicated)
@@ -100,12 +101,22 @@ void Deflate::compress(vector<uint8_t> &data)//BitStream &in)
             {
                 literalTree.write(out,data[i]);
             }
+            currentIdx+=ptr.length;
         }
         else
         {
-            //tableEncode(out,lengthTable,ptr.length);
-            //tableEncode(out,distTable,currentIdx-ptr.idx);
+            SelectedParse parsed = tableEncode(out,lengthTable,ptr.length);
+            literalTree.write(out,parsed.code);
+            out.write(parsed.extra,parsed.extrabit);
+
+            parsed = tableEncode(out,distTable,currentIdx-ptr.idx);
+            distanceTree.write(out,parsed.code);
+            out.write(parsed.extra,parsed.extrabit);
+
+            currentIdx+=ptr.length;
         }
     }
     literalTree.write(out,256);//end of block marker
+
+    return out.getData();
 }
