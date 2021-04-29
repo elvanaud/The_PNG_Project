@@ -46,8 +46,11 @@ private:
     void processBlock(BitStream &in);
     bool finalBlock = false;
 
+    void generateDynamicTrees(vector<int> & litFreq, HuffmanTree<uint16_t> & binTree);//,  vector<int> & distFreq);
+    void generateDynamicHeader(vector<int> & codeLengths);
+
     HuffmanTree<uint16_t> literalTree;
-    HuffmanTree<uint8_t> distanceTree;
+    HuffmanTree<uint16_t> distanceTree;//previously was uint8 but I changed it to make it work as a parameter without templates
 };
 
 #endif // DEFLATE_H

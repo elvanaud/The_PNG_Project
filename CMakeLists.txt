@@ -4,6 +4,7 @@ project(The_PNG_Project VERSION 0.1.0)
 include(CTest)
 enable_testing()
 
+set(CXX_STANDARD 2014)
 
 file (GLOB_RECURSE Project_SOURCES CONFIGURE_DEPENDS "./*.cc")
 #file (GLOB_RECURSE Project_HEADERS CONFIGURE_DEPENDS "./*.h")

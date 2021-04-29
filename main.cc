@@ -51,6 +51,7 @@ int main()
 
         cout << "Compression ratio:"<<endl<<"Original size: "<<originalSize<<endl<<"New size: "<<compressedSize<<endl;
         cout << "Ratio: "<< (double(compressedSize)/originalSize)*100.0<<" %" <<endl;
+        cout << "Factor: "<<(double(originalSize)/compressedSize)<<endl;
     }
     catch(const char * msg)
     {

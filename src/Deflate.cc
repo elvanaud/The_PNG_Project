@@ -37,9 +37,8 @@ void Deflate::loadDynamicHuffmanTrees(BitStream& in)
     unsigned int HCLEN = in.read(4)+4;
 
     vector<int> codeLengthAlphabet = {16,17,18,0,8,7,9,6,10,5,11,4,12,3,13,2,14,1,15};
-    vector<int> codeLengthCodes = {};
-    for(int i = 0; i < codeLengthAlphabet.size(); i++)
-        codeLengthCodes.push_back(0);
+    vector<int> codeLengthCodes(codeLengthAlphabet.size(),0);
+    
     for(unsigned int i = 0;i<HCLEN;i++)
     {
         //codeLengthCodes.push_back(in.read(3));
@@ -208,11 +207,10 @@ void Deflate::processBlock(BitStream &in)
         break;
     case 1:
         loadFixedHuffmanTrees();
-    case 2:
-        if(blockType == 2)//dynamic huffman
-        {
-            loadDynamicHuffmanTrees(in);
-        }
+        processCompressedBlock(in);
+        break;
+    case 2: //dynamic huffman
+        //loadDynamicHuffmanTrees(in);
         processCompressedBlock(in);
         break;
     case 3:
